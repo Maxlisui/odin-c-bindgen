@@ -19,30 +19,43 @@ _ :: c
 _ :: libc
 
 when ODIN_OS == .Windows {
-	when !#exists("libclang.lib") {
-		#panic("Download libclang 20.1.8 from here: https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.8/clang+llvm-20.1.8-x86_64-pc-windows-msvc.tar.xz -- Copy the following from that archive:\n- `lib/libclang.lib` into the generator's 'libclang' folder\n- `bin/libclang.dll` into the root of the generator (next to where the bindgen executable will end up).")
+	@(extra_linker_flags="/NODEFAULTLIB:libcmt")
+	foreign import dep {
+		"system:ntdll.lib",
+		"system:ucrt.lib",
+		"system:msvcrt.lib",
+		"system:legacy_stdio_definitions.lib",
+		"system:kernel32.lib",
+		"system:user32.lib",
+		"system:advapi32.lib",
+		"system:shell32.lib",
+		"system:ole32.lib",
+		"system:oleaut32.lib",
+		"system:uuid.lib",
+		"system:ws2_32.lib",
+		"system:version.lib",
+		"system:oldnames.lib",
 	}
 
-    @(extra_linker_flags="/NODEFAULTLIB:libcmt")
-    foreign import lib {
-        "system:ntdll.lib",
-        "system:ucrt.lib",
-        "system:msvcrt.lib",
-        "system:legacy_stdio_definitions.lib",
-        "system:kernel32.lib",
-        "system:user32.lib",
-        "system:advapi32.lib",
-        "system:shell32.lib",
-        "system:ole32.lib",
-        "system:oleaut32.lib",
-        "system:uuid.lib",
-        "system:ws2_32.lib",
-        "system:version.lib",
-        "system:oldnames.lib",
-        "libclang.lib",
+	when LIBCLANG_USE_SYSTEM_LIB {
+		foreign import lib {
+			"system:libclang.lib",
+		}
+	} else {
+		foreign import lib {
+			"libclang.lib",
+		}
 	}
 } else {
-    foreign import lib "system:clang"
+	when LIBCLANG_USE_SYSTEM_LIB {
+		foreign import lib "system:clang"
+	} else when ODIN_OS == .Linux {
+		foreign import lib "libclang.so"
+	} else when ODIN_OS == .Darwin {
+		foreign import lib "libclang.dylib"
+	} else {
+		foreign import lib "system:clang"
+	}
 }
 
 // LLVM_CLANG_C_CXFILE_H :: 
